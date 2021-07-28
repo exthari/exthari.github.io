@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta http-equiv="Content-Security-Policy" content="default-src *; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; media-src 'self'; object-src 'self'; child-src 'self'; form-action 'self'; base-uri 'self'" />
+<meta http-equiv="X-XSS-Protection"  content="1;mode=block" always>
+<meta http-equiv="Referrer-Policy" content="no-referrer, strict-origin-when-cross-origin"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ELF x86 — Stack buffer overflow basic 6 Rootme (App-System) (Introduction to Ret2libc)</title><!-- Begin Jekyll SEO tag v2.7.1 -->
+<meta name="generator" content="Jekyll v4.2.0" />
+<meta property="og:title" content="ELF x86 — Stack buffer overflow basic 6 Rootme (App-System) (Introduction to Ret2libc)" />
+<meta name="author" content="Hariharan" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="# ELF x86 — Stack buffer overflow basic 6 Rootme (App-System) (Introduction to Ret2libc)" />
+<meta property="og:description" content="# ELF x86 — Stack buffer overflow basic 6 Rootme (App-System) (Introduction to Ret2libc)" />
+<meta property="og:site_name" content="$ Corrupted Protocols" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-01-04T00:00:00+05:30" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="ELF x86 — Stack buffer overflow basic 6 Rootme (App-System) (Introduction to Ret2libc)" />
+<script type="application/ld+json">
+{"description":"# ELF x86 — Stack buffer overflow basic 6 Rootme (App-System) (Introduction to Ret2libc)","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"/binary/ELF%20x86%20Stack%20buffer%20overflow%20basic%206%20Rootme"},"dateModified":"2021-01-04T00:00:00+05:30","author":{"@type":"Person","name":"Hariharan"},"url":"/binary/ELF%20x86%20Stack%20buffer%20overflow%20basic%206%20Rootme","headline":"ELF x86 — Stack buffer overflow basic 6 Rootme (App-System) (Introduction to Ret2libc)","datePublished":"2021-01-04T00:00:00+05:30","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" type="text/css" href="/assets/main-dark.css"></head>
+<body>
+    <div class="container"><header>
+
+  <h2>$ Corrupted Protocols</h2>
+  <hr>
+
+      <nav>
+
+          <a href="/">Home</a>
+          &nbsp
+          <a href="/binary">Binary Exploitation</a>
+          &nbsp
+          <a href="/web">Web</a>
+          &nbsp
+          <a href="/ctf">CTF Writeup</a>
+          &nbsp
+          <a href="/machines">Machines</a>
+          &nbsp
+          <a href="/about">About Me</a>
+          &nbsp
+          <a href="/contact">Contact</a>
+          &nbsp
+
+          <form class="classform" style="display:inline !important;" action="/search.html" method="get">
+            <label for="search-box">Search</label>
+            <input placeholder="Search here"  class="inputform" type="text" id="search-box" name="query">
+          </form>
+
+
+      </nav>
+
+    <hr>
+</header>
+<main>
+      <h2># ELF x86 — Stack buffer overflow basic 6 Rootme (App-System) (Introduction to Ret2libc)</h2>
+<hr />
+
+<h3>./Introduction to Ret2libc.sh</h3>
+<p> </p>
+
+<p>$ Let me be honest with you, I was thinking ret2libc and Return oriented programming is a tough concept. But it turns out to be easy. I will be giving some basic introduction to Ret2libc (Return to Libc) before starting with the challenge. Feel free to skip the introduction part if you are familiar with Ret2lipage</p>
+
+<p>$ First, we have to know about the Non-Executable Stack.</p>
+
+<p>$ <code class="language-plaintext highlighter-rouge">Non-executable stack</code> (NX) is a virtual memory protection mechanism to block shell code injection from executing on the stack by restricting a particular memory and implementing the NX bit.</p>
+
+<p>$ This is a type of memory protection mechanism. You cannot do a normal buffer overflow here. We have been doing buffer overflow to execute a shell and get the flag. But if you see in challenge 6, we don’t have a shell function or a system call. We need to execute it ourselves by injecting a particular payload that can pop a shell.</p>
+
+<p>$ In this case, we use Ret2libc. But so far I was talking only about this challenge. As I said earlier, if you have a Non-Executable Stack, this method might come in handy.</p>
+
+<h3>./Libc.sh</h3>
+
+<p> </p>
+
+<p>$ There is a library called <strong>Libc</strong>. Libc is a standard library for the C programming language. This contains various function like system() calls, strcpy() , exit() and so on. The basic ideology is to recreate the system call to a shell, which we have been seeing in previous Rootme challenges. But how?</p>
+
+<p>$ We need to locate the Libc and <strong>system()</strong> in the virtual memory after executing the program. Then find <strong>“/bin/bash” or “/bin/sh”</strong> which again will be located in the virtual memory. Accessing this library doesn’t have any connection with the memory protection (Non-Executable Stack). Then we execute a command like a system(“/bin/sh”) to execute a shell.</p>
+
+<p>$ Finding the <strong>system()</strong> inside Libc and “/bin/sh” is the next task. As usual, we just use gdb. Create a break-point at the main. Then execute</p>
+
+<p><em>p system</em></p>
+
+<p>$ You’ll get the address for the system. Then we need to search for “/bin/sh” or “/bin/bash” which we need to use the proc map. It would be better to show this directly in the challenge.</p>
+
+<p>$ Don’t worry if you didn’t understand the above explanation. It will be much easier to relate when we do the challenge.</p>
+
+<h3>./Challenge.sh</h3>
+<p> </p>
+
+<p>$ We will see the source code for the following challenge.</p>
+
+<p><img src="/Pictures/Rootme6-sourcecode.png" alt="SouceCode" />
+ </p>
+
+<p>$ Let us try to analyze the code. We have a variable “message” of type char and has a size of 20 bytes. This means it can hold 20 characters. We directly skip to setreuid(), as the function above doesn’t make any sense now. Then we see the strcpy(). It takes in the argument argv. Clearly, we need to give our input in the command line. Then it prints out the message. Strcpy() doesn’t care about the size of argv. The first 20 bytes will be assigned to the variable “message”. So this is our place of attack as we can overflow and overwrite EIP.</p>
+
+<p>$ First, we need to know the size of buffer and padding along with EBP to write our exploit. For this, use GDB and disassemble main. I am not pasting the entire code here as it is too long.</p>
+
+<p><img src="/Pictures/Rootme6-firstpic.png" alt="SouceCode" />
+ </p>
+
+<p>$ If you analyze the code, clearly ebp-0x1c is used before strcpy(). If you have read my previous blogs, you’ll know why I am taking note of this. We know the variable “message” has a size of 20 bytes. Then EBP should be 4 bytes. So we need to find the padding size with the usual calculation. As usual, I am going to draw the stack diagram.</p>
+
+<p><img src="/Pictures/Rootme6-stackdiagram.png" alt="SouceCode" />
+ </p>
+
+<p>$ With calculation, we can see the padding used here is 8 bytes. This can be directly obtained from starting of the code. But I like to use this method. Now we find where the system() and “/bin/sh” are located in the virtual memory.</p>
+
+<p><img src="/Pictures/Rootme6-secondpic.png" alt="SouceCode" />
+ </p>
+
+<p>$ Now we have the address for the system(). Next, we need to see where “/bin/sh” is located. For this, we use the command “info proc map”. We note down the address of where Libc starts and where it ends.</p>
+
+<p><img src="/Pictures/Rootme6-procmap.png" alt="SouceCode" />
+ </p>
+
+<p>$ Now we can use a command called find . The syntax is as follows.</p>
+
+<p><strong>find <em>starting_address</em> , <em>ending_address</em> , “string”</strong></p>
+
+<p><img src="/Pictures/Rootme6-thirdpic.png" alt="SouceCode" />
+ </p>
+
+<p>$ Now we are ready to write our exploit. Basic methodology, First overflow the buffer with 32 bytes of a random character. Then place the system() address in little-endian format at EIP/Return Address. Now fill with 4 bytes of random character again and finally our address “/bin/sh” in little-endian format.</p>
+
+<p><img src="/Pictures/Rootme6-final.png" alt="SouceCode" /></p>
+
+<p>$ But as already mentioned, we need to give this exploit as an argument. We use a $ symbol for this. And there we go! we found our flag!</p>
+
+<p>$ Hope you understood Ret2libc. I know it will be hard to understand at first, but try to do the challenge on your own. Also, draw a stack diagram like me. This will help you in the calculation.</p>
+
+<p>$ Do give some claps if you reached here :). And feel free to ask your doubts in the comment section. It would help others too!</p>
+
+<p>$ Goodbye :)</p>
+
+
+    </main><footer>
+  Visit Contact for More Info
+</footer>
+</div>
+  </body>
+</html>
