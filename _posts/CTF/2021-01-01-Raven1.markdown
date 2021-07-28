@@ -1,0 +1,100 @@
+---
+layout: post
+title: Raven 1 CTF Writeup
+categories: CTF
+author: Hariharan
+permalink: /ctf/Raven1
+---
+
+<h2># {{page.title}}</h2>
+<hr>
+
+<h3>$ ./Introduction to Raven CTF.sh</h3>
+&nbsp;
+
+$ Capture the flag (CTF ) is a challenge-based task where a player tries to find all the flags in the given box. They provide an opportunity for fun, self-driven learning, and can practice new skills. Today we will be solving a CTF from Vulnhub called Raven.
+
+$ Raven1, an example of a perfectly built CTF, with a practical approach. This tricky box is quite interesting with many tools and techniques involved. The box can be downloaded from the site
+
+[$ Website to Download Raven CTF](https://www.vulnhub.com/entry/raven-1,256/)
+
+$ The task in this CTF is to find out the 4 flags which are well hidden in the box.
+
+<h3>$ ./Challenge.sh</h3>
+&nbsp;
+
+$ The first step is to find the IP address of the box running as a virtual machine, You could either use netdiscover or any other tool of your choice.
+
+$ Now it is always advised to enumerate the machine rather than following a blind approach. Understanding every step is crucial. A basic network scan is important for a CTF. This is done to reveal the open ports and even find the vulnerability using various scripts.
+
+![NmapScan](/Pictures/Raven-Nmapscan.png)
+&nbsp;
+
+$ Now there are 3 open ports, and out of those three, SSH and HTTP are very common. Using the IP address of the machine in the browser and seeing if there is anything popping up!
+
+$ The page has a lot of hyperlinks. The next thing to check out is the Developer Tools and inspect the page. Sometimes things are often hidden here. This makes the challenge even tougher
+
+![Flag1](/Pictures/Raven-Firstflag.png)
+&nbsp;
+
+$ The first flag is well hidden inside the developer tools.
+
+$ The next step after this would be finding the directories. Using a tool called Dirbuster to find out the directory. This is a common technique and avoids a blind approach towards the CTF
+
+![Dirbusterscan](/Pictures/Raven-Dirbuster.png)
+&nbsp;
+
+$ There is a WordPress directory.
+
+$ WordPress has a bad past with vulnerability. Starting a WPscan could reveal the version and vulnerability. The syntax for the WPscan might be a little confusing. But there is always a “man” command to our rescue!
+
+![WPScan](/Pictures/Raven-Wpscan.png)
+&nbsp;
+
+$ The scan might take a couple of minutes to finish.
+
+$ After the scan completes, there is a database that gives us the username. Maybe this can be used for SSH? Let’s see!
+
+![Username](/Pictures/Raven-username.png)
+&nbsp;
+
+$ But there is a problem here. The password for the given username is unknown. It is a good practice to try out the common passwords before using a brute force technique. Here the username and password were both “michael”.
+
+![SSHmicheal](/Pictures/Raven-SSHMicheal.png)
+&nbsp;
+
+$ The next step is privilege escalation. But before that let’s have a look at the files on the machine.
+
+![InsideMachine](/Pictures/Raven-Insidemachine.png)
+&nbsp;
+
+$ When you SSH to the machine and search the machine, there is a folder called “www” Which had the second flag.
+
+$ Again with a deep search, there was a folder called WordPress. The location to this is /var/www/html/wordpress/wp-config.php. There could be a database related to WordPress.
+
+$ Using MySQL for this purpose.
+
+![SQL](/Pictures/Raven-SQL.png)
+&nbsp;
+
+$ Changing our working database to WordPress, the tables are visible now. There are few interesting tables like wp_users.
+
+![Tables](/Pictures/Raven-tables.png)
+&nbsp;
+
+$ The wp_posts contains the flag3 and flag4. which actually is the end of the CTF. But wait? The root access !!! The table wp_users contains the hashes of the password.
+
+![Hashes](/Pictures/Raven-hashes.png)
+&nbsp;
+
+$ Cracking the hashes with a tool called john. This gives us the password for steven, which is also the password for the root access!
+
+$ The password is now available in the john folder.
+
+![Password](/Pictures/Raven-Password.png)
+&nbsp;
+
+
+$ That was quite interesting, right? A very simple approach yet tough to figure it out. Sometimes there might be difficulty while doing a CTF, but with practice, it is possible to master the tools and techniques involved. There is a Raven2 room too, for which the write-ups will be out soon.
+
+$ Goodbye :)
