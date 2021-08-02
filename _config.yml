@@ -36,7 +36,7 @@ theme: jekyll-theme-console
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
-style: dark
+style: light
 # listen_for_clients_preferred_style: false
 # Exclude from processing.
 # The following items will not be processed, by default.
